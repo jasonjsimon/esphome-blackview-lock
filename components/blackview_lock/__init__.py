@@ -4,12 +4,12 @@ from esphome.components import esp32_ble_client
 from esphome.const import CONF_ID
 
 blackview_lock_ns = cg.esphome_ns.namespace('blackview_lock')
-# The only change is BLEClientNode -> BLEClientBase in the line below
 BlackviewLock = blackview_lock_ns.class_('BlackviewLock', cg.Component, esp32_ble_client.BLEClientBase)
 
+# The only change is BLE_CLIENT_SCHEMA -> ble_client_schema() in the line below
 CONFIG_SCHEMA = cv.Schema({
     cv.GenerateID(): cv.declare_id(BlackviewLock),
-}).extend(esp32_ble_client.BLE_CLIENT_SCHEMA)
+}).extend(esp32_ble_client.ble_client_schema())
 
 async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
