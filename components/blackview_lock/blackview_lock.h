@@ -10,14 +10,12 @@
 using namespace esphome;
 using namespace esphome::esp32_ble_client;
 
-// We found the notify handle (0x0B) in logs. The write handle is almost always +3 in this structure.
-// If this fails, the next most likely value is 12 (0x0C).
-static const uint16_t BLACKVIEW_WRITE_HANDLE = 14; // 0x0E in hex
+static const uint16_t BLACKVIEW_WRITE_HANDLE = 14;
 
-class BlackviewLock : public Component, public BLEClientNode {
+// This class name must match the one used in the Python file (BLEClientBase)
+class BlackviewLock : public Component, public BLEClientBase {
  public:
   void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param) override {
-    // This event fires as soon as the BLE connection is physically open
     if (event == ESP_GATTC_OPEN_EVT) {
       if (param->open.status == ESP_GATT_OK) {
         ESP_LOGI("blackview_lock", "Connected! Immediately sending Hello packet...");
@@ -27,7 +25,6 @@ class BlackviewLock : public Component, public BLEClientNode {
       }
     }
 
-    // This event fires when we get the response to our write
     if (event == ESP_GATTC_WRITE_CHAR_EVT) {
       if (param->write.status == ESP_GATT_OK) {
         ESP_LOGI("blackview_lock", "Hello packet sent successfully!");
@@ -35,8 +32,7 @@ class BlackviewLock : public Component, public BLEClientNode {
         ESP_LOGW("blackview_lock", "Failed to write Hello packet, status=%d", param->write.status);
       }
     }
-
-    // This event fires when the lock sends us the encryption key
+    
     if (event == ESP_GATTC_NOTIFY_EVT) {
       ESP_LOGI("blackview_lock", "SUCCESS! Key data received (%d bytes): %s",
                param->notify.value_len, format_hex_pretty(param->notify.value, param->notify.value_len).c_str());
@@ -44,6 +40,7 @@ class BlackviewLock : public Component, public BLEClientNode {
   }
 
   void send_hello_packet(esp_gatt_if_t gattc_if, uint16_t conn_id) {
+    // Packet building logic remains the same...
     uint64_t random_c = ((uint64_t) esp_random() << 32) | esp_random();
     std::vector<uint8_t> payload;
     for (int i = 0; i < 8; i++) {
@@ -73,7 +70,7 @@ class BlackviewLock : public Component, public BLEClientNode {
     packet.push_back((crc >> 8) & 0xFF);
 
     ESP_LOGD("blackview_lock", "Writing Hello packet to handle 0x%02X", BLACKVIEW_WRITE_HANDLE);
-    esp_err_t status = esp_ble_gattc_write_char(
+    esp_ble_gattc_write_char(
         gattc_if,
         conn_id,
         BLACKVIEW_WRITE_HANDLE,
@@ -81,9 +78,6 @@ class BlackviewLock : public Component, public BLEClientNode {
         packet.data(),
         ESP_GATT_WRITE_TYPE_RSP,
         ESP_GATT_AUTH_REQ_NONE);
-    if (status != ESP_OK) {
-      ESP_LOGE("blackview_lock", "esp_ble_gattc_write_char failed, error=0x%x", status);
-    }
   }
 };
 #endif
