@@ -1,7 +1,8 @@
 #pragma once
 
 #include "esphome.h"
-#include "esphome/components/esp32_ble_client/esp32_ble_client.h"
+// This path has been corrected to be more specific.
+#include "esphome/components/esp32_ble_client/ble_client_base.h"
 
 #ifdef USE_ESP32
 
@@ -12,7 +13,6 @@ using namespace esphome::esp32_ble_client;
 
 static const uint16_t BLACKVIEW_WRITE_HANDLE = 14;
 
-// This class name must match the one used in the Python file (BLEClientBase)
 class BlackviewLock : public Component, public BLEClientBase {
  public:
   void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param) override {
@@ -40,7 +40,6 @@ class BlackviewLock : public Component, public BLEClientBase {
   }
 
   void send_hello_packet(esp_gatt_if_t gattc_if, uint16_t conn_id) {
-    // Packet building logic remains the same...
     uint64_t random_c = ((uint64_t) esp_random() << 32) | esp_random();
     std::vector<uint8_t> payload;
     for (int i = 0; i < 8; i++) {
