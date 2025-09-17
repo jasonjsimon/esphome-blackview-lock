@@ -80,5 +80,3 @@ class BlackviewLock : public Component, public BLEClientBase {
   }
 };
 #endif
-
- 
